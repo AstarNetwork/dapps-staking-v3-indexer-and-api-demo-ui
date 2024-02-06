@@ -25,7 +25,7 @@ ChartJS.register(
 // Fetch and process data for the chart
 async function stakersCountDaily() {
   const response = await fetch(
-    "https://squid.subsquid.io/dapps-staking-indexer-shibuya/v/v1/graphql", {
+    "https://squid.subsquid.io/dapps-staking-indexer-shibuya/graphql", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
