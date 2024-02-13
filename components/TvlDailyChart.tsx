@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  Title, 
-  Tooltip, 
-  PointElement, 
-  LineElement, 
-  Legend 
+import React, { useState, useEffect } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  PointElement,
+  LineElement,
+  Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
@@ -19,13 +19,14 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend,
+  Legend
 );
 
 // Fetch and process data for the chart
-async function tvlDaily() {
+async function tvlDaily(network: string) {
   const response = await fetch(
-    "https://squid.subsquid.io/dapps-staking-indexer-shibuya/graphql", {
+    `https://squid.subsquid.io/dapps-staking-indexer-${network}/graphql`,
+    {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -39,7 +40,7 @@ async function tvlDaily() {
           }
         `,
       }),
-      next: { revalidate: 10 }
+      next: { revalidate: 10 },
     }
   );
   const { data } = await response.json();
@@ -47,16 +48,20 @@ async function tvlDaily() {
 }
 
 function createDataObjectFromTVLData(indexerData) {
-  const labels = indexerData.map(entry => new Date(parseInt(entry.id)).toISOString().split('T')[0]);
-  const data = labels.map(label => {
-    const entry = indexerData.find(e => new Date(parseInt(e.id)).toISOString().split('T')[0] === label);
+  const labels = indexerData.map(
+    (entry) => new Date(parseInt(entry.id)).toISOString().split("T")[0]
+  );
+  const data = labels.map((label) => {
+    const entry = indexerData.find(
+      (e) => new Date(parseInt(e.id)).toISOString().split("T")[0] === label
+    );
     const tvlAdjusted = Math.floor(entry.tvl / Math.pow(10, 18)); // Divide by 10^18 and round down
     return tvlAdjusted;
   });
 
   return {
     labels,
-    datasets: [{ label: "TVL", data, backgroundColor: "red" }]
+    datasets: [{ label: "TVL", data, backgroundColor: "red" }],
   };
 }
 
@@ -66,20 +71,20 @@ const options = {
   responsive: true,
   plugins: {
     legend: { position: "top" as const },
-    title: { display: true, text: "Daily Total of Value Locked" }
+    title: { display: true, text: "Daily Total of Value Locked" },
   },
 };
 
 // React component for the chart
-const TvlDailyChart = () => {
+const TvlDailyChart = ({ network }: { network: string }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    tvlDaily().then(indexerData => {
+    tvlDaily(network).then((indexerData) => {
       const chartData = createDataObjectFromTVLData(indexerData);
       setData(chartData);
     });
-  }, []);
+  }, [network]);
 
   if (data === null) {
     return <div>Loading...</div>;

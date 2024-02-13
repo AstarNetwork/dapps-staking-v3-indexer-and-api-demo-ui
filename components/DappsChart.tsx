@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Chart as ChartJS, 
+import React, { useState, useEffect } from "react";
+import {
+  Chart as ChartJS,
   ArcElement,
-  CategoryScale, 
-  LinearScale, 
-  Title, 
-  Tooltip, 
-  PointElement, 
-  LineElement,  
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  PointElement,
+  LineElement,
 } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 
@@ -19,48 +19,55 @@ ChartJS.register(
   PointElement,
   LineElement,
   Title,
-  Tooltip,
+  Tooltip
 );
 
 // Fetch and process data for the chart
-async function getData() {
+async function getData(network: string) {
   try {
-    const response = await fetch('https://api.astar.network/api/v3/shibuya/dapps-staking/chaindapps');
+    const response = await fetch(
+      `https://api.astar.network/api/v3/${network}/dapps-staking/chaindapps`
+    );
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('There was a problem fetching the data: ', error);
+    console.error("There was a problem fetching the data: ", error);
   }
 }
 
 function stringToRGB(str) {
-    // Simple hash function to convert string to hash
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
+  // Simple hash function to convert string to hash
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
 
-    // Generating RGB values from the hash
-    const red = (hash & 0xFF0000) >> 16;
-    const green = (hash & 0x00FF00) >> 8;
-    const blue = hash & 0x0000FF;
+  // Generating RGB values from the hash
+  const red = (hash & 0xff0000) >> 16;
+  const green = (hash & 0x00ff00) >> 8;
+  const blue = hash & 0x0000ff;
 
-    return `rgba(${red}, ${green}, ${blue}, 1)`;
+  return `rgba(${red}, ${green}, ${blue}, 1)`;
 }
 
 function createDataObjectFromApiData(apiData) {
-  const filteredData = apiData.filter(entry => entry.stakersCount > 0 && entry.state === 'Registered');
-  const labels = filteredData.map(entry => entry.contractAddress);
-  const data = labels.map(label => filteredData.find(e => e.contractAddress === label).stakersCount);
-  const backgroundColor = labels.map(label => stringToRGB(label));
+  const filteredData = apiData.filter(
+    (entry) => entry.stakersCount > 0 && entry.state === "Registered"
+  );
+  const labels = filteredData.map((entry) => entry.contractAddress);
+  const data = labels.map(
+    (label) =>
+      filteredData.find((e) => e.contractAddress === label).stakersCount
+  );
+  const backgroundColor = labels.map((label) => stringToRGB(label));
   return {
     labels,
-    datasets: [{ label: "# of Stakers", data, backgroundColor }]
+    datasets: [{ label: "# of Stakers", data, backgroundColor }],
   };
 }
 
@@ -69,21 +76,21 @@ const options = {
   maintainAspectRatio: false,
   responsive: true,
   plugins: {
-    legend: { display: false},
-    title: { display: true, text: "Registered Dapps" }
+    legend: { display: false },
+    title: { display: true, text: "Registered Dapps" },
   },
 };
 
 // React component for the chart
-const DappsChart = () => {
+const DappsChart = ({ network }: { network: string }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    getData().then(apiData => {
+    getData(network).then((apiData) => {
       const chartData = createDataObjectFromApiData(apiData);
       setData(chartData);
     });
-  }, []);
+  }, [network]);
 
   if (data === null) {
     return <div>Loading...</div>;
