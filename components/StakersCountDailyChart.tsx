@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  Title, 
-  Tooltip, 
-  PointElement, 
-  LineElement, 
-  Legend 
+import React, { useState, useEffect } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  PointElement,
+  LineElement,
+  Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
@@ -19,13 +19,14 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend,
+  Legend
 );
 
 // Fetch and process data for the chart
-async function stakersCountDaily() {
+async function stakersCountDaily(network: string) {
   const response = await fetch(
-    "https://squid.subsquid.io/dapps-staking-indexer-shibuya/graphql", {
+    `https://squid.subsquid.io/dapps-staking-indexer-${network}/graphql`,
+    {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -39,7 +40,7 @@ async function stakersCountDaily() {
           }
         `,
       }),
-      next: { revalidate: 10 }
+      next: { revalidate: 10 },
     }
   );
   const { data } = await response.json();
@@ -47,12 +48,20 @@ async function stakersCountDaily() {
 }
 
 function createDataObjectFromStakersData(stakersData) {
-  const labels = stakersData.map(entry => new Date(parseInt(entry.id)).toISOString().split('T')[0]);
-  const data = labels.map(label => stakersData.find(entry => new Date(parseInt(entry.id)).toISOString().split('T')[0] === label).stakersCount);
+  const labels = stakersData.map(
+    (entry) => new Date(parseInt(entry.id)).toISOString().split("T")[0]
+  );
+  const data = labels.map(
+    (label) =>
+      stakersData.find(
+        (entry) =>
+          new Date(parseInt(entry.id)).toISOString().split("T")[0] === label
+      ).stakersCount
+  );
 
   return {
     labels,
-    datasets: [{ label: "# of Stakers", data, backgroundColor: "purple" }]
+    datasets: [{ label: "# of Stakers", data, backgroundColor: "purple" }],
   };
 }
 
@@ -62,20 +71,20 @@ const options = {
   responsive: true,
   plugins: {
     legend: { position: "top" as const },
-    title: { display: true, text: "Daily Count of Stakers" }
+    title: { display: true, text: "Daily Count of Stakers" },
   },
 };
 
 // React component for the chart
-const StakersCountDailyChart = () => {
+const StakersCountDailyChart = ({ network }: { network: string }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    stakersCountDaily().then(stakersData => {
+    stakersCountDaily(network).then((stakersData) => {
       const chartData = createDataObjectFromStakersData(stakersData);
       setData(chartData);
     });
-  }, []);
+  }, [network]);
 
   if (data === null) {
     return <div>Loading...</div>;
