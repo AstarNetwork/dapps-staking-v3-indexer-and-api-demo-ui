@@ -32,10 +32,16 @@ async function stakersCountDaily(network: string) {
       body: JSON.stringify({
         query: `
           query MyQuery {
-            stakersCountAggregatedDailies(orderBy: id_ASC) {
+            stakersCountAggregatedDailies(
+                orderBy: id_ASC,
+                where: {stakersCount_not_eq: 0}
+              ) {
               id
               stakersCount
-              blockNumber
+            }
+            tvlAggregatedDailies(orderBy: id_ASC) {
+              id
+              lockersCount
             }
           }
         `,
@@ -44,24 +50,52 @@ async function stakersCountDaily(network: string) {
     }
   );
   const { data } = await response.json();
-  return data?.stakersCountAggregatedDailies;
+
+  const mergedData = data.tvlAggregatedDailies.map((tvlEntry) => {
+    const matchingStakersEntry = data.stakersCountAggregatedDailies.find(
+      (stakersEntry) => stakersEntry.id === tvlEntry.id
+    );
+    return {
+      id: tvlEntry.id,
+      lockersCount: tvlEntry.lockersCount,
+      stakersCount: matchingStakersEntry
+        ? matchingStakersEntry.stakersCount
+        : null,
+    };
+  });
+
+  return mergedData;
 }
 
 function createDataObjectFromStakersData(stakersData) {
   const labels = stakersData.map(
     (entry) => new Date(parseInt(entry.id)).toISOString().split("T")[0]
   );
-  const data = labels.map(
-    (label) =>
-      stakersData.find(
-        (entry) =>
-          new Date(parseInt(entry.id)).toISOString().split("T")[0] === label
-      ).stakersCount
-  );
+
+  // Create arrays for stakers and lockers count
+  const stakersCountData = [];
+  const lockersCountData = [];
+
+  stakersData.forEach((entry) => {
+    // Assuming the entry includes both stakersCount and lockersCount
+    stakersCountData.push(entry.stakersCount); // Add stakers count directly
+    lockersCountData.push(entry.lockersCount); // Add lockers count directly
+  });
 
   return {
     labels,
-    datasets: [{ label: "# of Stakers", data, backgroundColor: "purple" }],
+    datasets: [
+      {
+        label: "# of Stakers",
+        data: stakersCountData,
+        backgroundColor: "purple",
+      },
+      {
+        label: "# of Lockers",
+        data: lockersCountData,
+        backgroundColor: "green",
+      },
+    ],
   };
 }
 

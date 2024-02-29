@@ -33,9 +33,12 @@ async function tvlDaily(network: string) {
         query: `
           query MyQuery {
             tvlAggregatedDailies(orderBy: id_ASC) {
-              blockNumber
               id
               tvl
+            }
+            stakersCountAggregatedDailies(orderBy: id_ASC, where: {stakersAmount_not_eq: "0"}) {
+              id
+              tvs: stakersAmount
             }
           }
         `,
@@ -44,24 +47,44 @@ async function tvlDaily(network: string) {
     }
   );
   const { data } = await response.json();
-  return data?.tvlAggregatedDailies;
+
+  const mergedData = data.tvlAggregatedDailies.map((tvlEntry) => {
+    const matchingStakersEntry = data.stakersCountAggregatedDailies.find(
+      (stakersEntry) => stakersEntry.id === tvlEntry.id
+    );
+    return {
+      id: tvlEntry.id,
+      tvl: tvlEntry.tvl,
+      tvs: matchingStakersEntry ? matchingStakersEntry.tvs : null,
+    };
+  });
+
+  return mergedData;
 }
 
 function createDataObjectFromTVLData(indexerData) {
   const labels = indexerData.map(
     (entry) => new Date(parseInt(entry.id)).toISOString().split("T")[0]
   );
-  const data = labels.map((label) => {
-    const entry = indexerData.find(
-      (e) => new Date(parseInt(e.id)).toISOString().split("T")[0] === label
-    );
-    const tvlAdjusted = Math.floor(entry.tvl / Math.pow(10, 18)); // Divide by 10^18 and round down
-    return tvlAdjusted;
+
+  const tvlData = [];
+  const tvsData = [];
+
+  // Populate tvlData and tvsData
+  indexerData.forEach((entry) => {
+    const tvlAdjusted = Math.floor(entry.tvl / Math.pow(10, 18)); // Adjust TVL
+    tvlData.push(tvlAdjusted);
+
+    const tvsAdjusted = Math.floor(entry.tvs / Math.pow(10, 18)); // Adjust TVS
+    tvsData.push(tvsAdjusted);
   });
 
   return {
     labels,
-    datasets: [{ label: "TVL", data, backgroundColor: "red" }],
+    datasets: [
+      { label: "TVL", data: tvlData, backgroundColor: "red" },
+      { label: "TVS", data: tvsData, backgroundColor: "blue" },
+    ],
   };
 }
 
