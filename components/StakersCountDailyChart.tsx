@@ -105,7 +105,7 @@ const options = {
   responsive: true,
   plugins: {
     legend: { position: "top" as const },
-    title: { display: true, text: "Daily Count of Stakers" },
+    title: { display: true, text: "Daily Count of Stakers & Lockers" },
   },
 };
 

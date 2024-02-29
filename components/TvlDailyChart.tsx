@@ -94,7 +94,7 @@ const options = {
   responsive: true,
   plugins: {
     legend: { position: "top" as const },
-    title: { display: true, text: "Daily Total of Value Locked" },
+    title: { display: true, text: "Daily Total of Value Locked & Staked" },
   },
 };
 
